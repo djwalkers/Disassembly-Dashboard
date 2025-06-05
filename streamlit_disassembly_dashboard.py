@@ -34,18 +34,18 @@ filtered_df = df[
     (df["Date"].dt.time <= end_time)
 ].copy()
 
-# --- Assign Shift and Shift Day ---
+# --- Assign Shift and Shift Day (AM/PM/Night) ---
 def assign_shift_and_shift_day(dt):
     t = dt.time()
     if time(6, 0) <= t < time(14, 0):
-        return "Shift 1", dt.date()
+        return "AM", dt.date()
     elif time(14, 0) <= t < time(22, 0):
-        return "Shift 2", dt.date()
+        return "PM", dt.date()
     else:
         shift_day = dt.date()
         if t < time(6, 0):
             shift_day -= timedelta(days=1)
-        return "Shift 3", shift_day
+        return "Night", shift_day
 
 filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
@@ -69,7 +69,7 @@ if not shift_summary.empty:
         y="Total Drawers",
         color="Shift",
         barmode="group",
-        title="Drawers Processed by Shift and Operator",
+        title="Drawers Processed by Shift (AM / PM / Night)",
         text_auto=True,
     )
     st.plotly_chart(fig, use_container_width=True)
