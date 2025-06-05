@@ -73,5 +73,17 @@ if not shift_summary.empty:
         text_auto=True,
     )
     st.plotly_chart(fig, use_container_width=True)
+    # --- Grand Total Summary by Shift ---
+st.subheader("📋 Total Drawers by Shift")
+
+totals_by_shift = (
+    filtered_df.groupby("Shift")["Drawers Processed"]
+    .sum()
+    .reset_index()
+    .rename(columns={"Drawers Processed": "Total Drawers"})
+)
+
+st.dataframe(totals_by_shift, use_container_width=True)
+
 else:
     st.info("No data matches the selected filters.")
