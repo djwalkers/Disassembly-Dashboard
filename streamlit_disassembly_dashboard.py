@@ -51,7 +51,7 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
-# --- Shift Summary ---
+# --- Shift Summary for Chart ---
 shift_summary = (
     filtered_df.groupby(["Shift Day", "Shift", "Operator"])["Drawers Processed"]
     .sum()
@@ -73,7 +73,10 @@ if not shift_summary.empty:
         text_auto=True,
     )
     st.plotly_chart(fig, use_container_width=True)
-    # --- Grand Total Summary by Shift ---
+else:
+    st.info("No data matches the selected filters.")
+
+# --- Grand Total Summary by Shift ---
 st.subheader("📋 Total Drawers by Shift")
 
 totals_by_shift = (
@@ -84,6 +87,3 @@ totals_by_shift = (
 )
 
 st.dataframe(totals_by_shift, use_container_width=True)
-
-else:
-    st.info("No data matches the selected filters.")
