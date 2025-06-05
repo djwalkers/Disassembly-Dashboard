@@ -23,7 +23,7 @@ with st.sidebar:
     start_date = st.date_input("Start Date", value=df["Date"].min().date())
     end_date = st.date_input("End Date", value=df["Date"].max().date())
     start_time = st.time_input("Start Time", value=time(6, 0), step=3600)
-    end_time = st.time_input("End Time", value=time(22, 0), setp=3600)
+    end_time = st.time_input("End Time", value=time(22, 0), step=3600)
 
 # --- Filter DataFrame ---
 filtered_df = df[
@@ -34,7 +34,7 @@ filtered_df = df[
     (df["Date"].dt.time <= end_time)
 ].copy()
 
-# --- Assign Shift and Shift Day (AM/PM/Night) ---
+# --- Assign Shift and Shift Day (AM / PM / Night) ---
 def assign_shift_and_shift_day(dt):
     t = dt.time()
     if time(6, 0) <= t < time(14, 0):
