@@ -30,7 +30,7 @@ with st.sidebar:
     start_time = st.time_input("Start Time", value=time(6, 0), step=3600)
     end_time = st.time_input("End Time", value=time(22, 0), step=3600)
 
-# --- Filter DataFrame ---
+# --- Shift Assignment ---
 df["Date"] = pd.to_datetime(df["Date"], dayfirst=True)
 
 def assign_shift_and_shift_day(dt):
@@ -47,17 +47,28 @@ def assign_shift_and_shift_day(dt):
 
 df[["Shift", "Shift Day"]] = df["Date"].apply(lambda x: pd.Series(assign_shift_and_shift_day(x)))
 
-filtered_df = df[
-    (df["Operator"].isin(selected_operators)) &
-    (df["Shift"].isin(selected_shifts)) &
-    (df["Date"].dt.date >= start_date) &
-    (df["Date"].dt.date <= end_date) &
-    (df["Date"].dt.time >= start_time) &
-    (df["Date"].dt.time <= end_time)
+# --- Time filtering using string comparison
+df["TimeStr"] = df["Date"].dt.strftime("%H:%M")
+start_str = start_time.strftime("%H:%M")
+end_str = end_time.strftime("%H:%M")
+
+if start_str < end_str:
+    time_filtered_df = df[df["TimeStr"].between(start_str, end_str)]
+else:
+    time_filtered_df = df[(df["TimeStr"] >= start_str) | (df["TimeStr"] <= end_str)]
+
+# --- Final Filtered DataFrame ---
+filtered_df = time_filtered_df[
+    (time_filtered_df["Operator"].isin(selected_operators)) &
+    (time_filtered_df["Shift"].isin(selected_shifts)) &
+    (time_filtered_df["Date"].dt.date >= start_date) &
+    (time_filtered_df["Date"].dt.date <= end_date)
 ].copy()
 
+# Format dates for display
 filtered_df["Date"] = pd.to_datetime(filtered_df["Date"]).dt.strftime("%d/%m/%y %H:%M")
 filtered_df["Shift Day"] = pd.to_datetime(filtered_df["Shift Day"]).dt.strftime("%d/%m/%y")
+filtered_df.drop(columns=["TimeStr"], inplace=True)
 
 # --- KPI % Analysis ---
 filtered_df["KPI %"] = ((filtered_df["Drawers Processed"] / 1) / KPI_TARGET * 100).round(1)  # assuming 1 hour sessions
