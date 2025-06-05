@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from datetime import datetime, time, timedelta
-import io
 
 st.set_page_config(page_title="Disassembly Dashboard", layout="wide")
 st.title("🛠️ Disassembly Shift Performance Dashboard")
@@ -52,48 +51,52 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
-# Format for display
+# --- Format date display
 filtered_df["Date"] = pd.to_datetime(filtered_df["Date"]).dt.strftime("%d/%m/%y %H:%M")
 
-# --- Shift Summary Table ---
-shift_summary = (
-    filtered_df.groupby(["Shift Day", "Shift", "Operator"])["Drawers Processed"]
-    .sum()
+# --- Calculate Drawers Per Hour ---
+# Group by operator, shift, day and count shift entries
+grouped = (
+    filtered_df.groupby(["Shift Day", "Shift", "Operator"])
+    .agg(
+        Total_Drawers=("Drawers Processed", "sum"),
+        Sessions=("Date", "count")
+    )
     .reset_index()
-    .rename(columns={"Drawers Processed": "Total Drawers"})
 )
 
-shift_summary["Shift Day"] = pd.to_datetime(shift_summary["Shift Day"]).dt.strftime("%d/%m/%y")
+# Assume each session (row) = 1 hour worked
+grouped["Drawers per Hour"] = (grouped["Total_Drawers"] / grouped["Sessions"]).round(1)
+grouped["Shift Day"] = pd.to_datetime(grouped["Shift Day"]).dt.strftime("%d/%m/%y")
 
-# --- KPI Target ---
-KPI_TARGET = 130 * 8  # Drawers expected per 8-hour shift
+# --- KPI Setup ---
+KPI_PER_HOUR = 130
 
-# --- Chart ---
-st.subheader("📊 Drawers Processed per Shift by Operator")
+# --- Plot Chart ---
+st.subheader("📊 Drawers per Hour by Operator and Shift")
 
-if not shift_summary.empty:
+if not grouped.empty:
     fig = px.bar(
-        shift_summary,
+        grouped,
         x="Operator",
-        y="Total Drawers",
+        y="Drawers per Hour",
         color="Shift",
         barmode="group",
-        title="Drawers Processed by Shift (AM / PM / Night)",
+        title="Operator Productivity by Shift (Drawers per Hour)",
         text_auto=True,
     )
-    # Add KPI target line
     fig.add_hline(
-        y=KPI_TARGET,
+        y=KPI_PER_HOUR,
         line_dash="dash",
         line_color="red",
-        annotation_text=f"KPI Target ({KPI_TARGET})",
+        annotation_text=f"KPI Target ({KPI_PER_HOUR}/hr)",
         annotation_position="top right"
     )
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("No data matches the selected filters.")
 
-# --- Grand Total Summary by Shift ---
+# --- Grand Total Drawers Table by Shift ---
 st.subheader("📋 Total Drawers by Shift")
 
 totals_by_shift = (
@@ -103,27 +106,17 @@ totals_by_shift = (
     .rename(columns={"Drawers Processed": "Total Drawers"})
 )
 
-# Add KPI comparison
-totals_by_shift["KPI Target"] = KPI_TARGET
-totals_by_shift["% of KPI"] = (totals_by_shift["Total Drawers"] / KPI_TARGET * 100).round(1)
+totals_by_shift["KPI Target"] = KPI_PER_HOUR * 1  # hourly KPI shown for clarity
+totals_by_shift["Note"] = "Total not normalized by shift length"
 
-# Conditional coloring
-def highlight_kpi(row):
-    color = "#90EE90" if row["Total Drawers"] >= KPI_TARGET else "#FFB6C1"
-    return [f'background-color: {color}'] * len(row)
+st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
 
-styled_table = totals_by_shift.style.apply(highlight_kpi, axis=1)
-
-st.dataframe(styled_table, use_container_width=True, hide_index=True)
-
-# --- CSV Export ---
-csv_export = shift_summary.copy()
-csv_export = csv_export.sort_values(["Shift Day", "Shift", "Operator"])
-csv_bytes = csv_export.to_csv(index=False).encode("utf-8")
+# --- Downloadable Summary ---
+csv_bytes = grouped.to_csv(index=False).encode("utf-8")
 
 st.download_button(
-    label="📤 Download Shift Summary as CSV",
+    label="📤 Download Drawers per Hour Summary (CSV)",
     data=csv_bytes,
-    file_name="shift_summary.csv",
+    file_name="drawers_per_hour_summary.csv",
     mime="text/csv"
 )
