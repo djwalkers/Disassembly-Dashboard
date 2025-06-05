@@ -87,7 +87,7 @@ if not shift_summary.empty:
         line_dash="dash",
         line_color="red",
         annotation_text=f"KPI Target ({KPI_TARGET})",
-        annotation_position="outside top"
+        annotation_position="top right"
     )
     st.plotly_chart(fig, use_container_width=True)
 else:
