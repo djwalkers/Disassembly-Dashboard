@@ -93,13 +93,13 @@ totals_by_shift = (
 
 st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
 
-# --- 🏆 Top Operator Per Day (Corrected) ---
+# --- 🏆 Top Operator Per Day (All Shifts Combined) ---
 st.subheader("🏆 Top Operator Per Day (Average Drawers per Session)")
 
 filtered_df["Shift Day"] = pd.to_datetime(filtered_df["Shift Day"])
 
 top_per_day = (
-    filtered_df.groupby(["Shift Day", "Shift", "Operator"])
+    filtered_df.groupby(["Shift Day", "Operator"])
     .agg(
         Total_Drawers=("Drawers Processed", "sum"),
         Sessions=("Date", "count")
@@ -109,7 +109,7 @@ top_per_day = (
 
 top_per_day["Avg Drawers per Session"] = (top_per_day["Total_Drawers"] / top_per_day["Sessions"]).round(2)
 
-# Correct top operator logic
+# Correct top operator logic (no shift separation)
 idx = top_per_day.groupby("Shift Day")["Avg Drawers per Session"].idxmax()
 top_users = top_per_day.loc[idx].reset_index(drop=True)
 
@@ -120,15 +120,14 @@ top_users = top_users.rename(columns={
     "Operator": "Top Operator"
 })
 
-st.dataframe(top_users[["Date", "Top Operator", "Shift", "Avg Drawers per Session"]],
+st.dataframe(top_users[["Date", "Top Operator", "Avg Drawers per Session"]],
              use_container_width=True, hide_index=True)
 
 # --- 🐛 DEBUG CHECK: YI LAM WONG ---
 st.subheader("🐛 Debug Check: YI LAM WONG Sessions")
 
 debug_operator = "YI LAM WONG"
-debug_data = df[df["Operator"] == debug_operator].copy()
-debug_data[["Shift", "Shift Day"]] = debug_data["Date"].apply(lambda x: pd.Series(assign_shift_and_shift_day(x)))
+debug_data = filtered_df[filtered_df["Operator"] == debug_operator].copy()
 
 session_count = len(debug_data)
 drawer_total = debug_data["Drawers Processed"].sum()
