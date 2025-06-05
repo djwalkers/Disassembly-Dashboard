@@ -84,18 +84,23 @@ shift_summary = filtered_df.groupby(["Shift Day", "Shift", "Operator"]).agg(
 ).reset_index()
 
 if not shift_summary.empty:
+    # Sort by total drawers descending for clearer chart
+    shift_summary = shift_summary.sort_values("Total_Drawers", ascending=False)
+
     fig = px.bar(
         shift_summary,
         x="Operator",
         y="Total_Drawers",
         color="Shift",
         barmode="group",
-        title="Drawers Processed by Shift",
+        title="Drawers Processed by Shift (Sorted High to Low)",
         text_auto=True,
+        category_orders={"Operator": shift_summary["Operator"].tolist()}  # Preserve sort in x-axis
     )
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("No data matches your filters.")
+
 
 # --- Grand Total Summary by Shift ---
 st.subheader("📋 Total Drawers by Shift")
