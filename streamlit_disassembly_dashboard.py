@@ -22,8 +22,8 @@ with st.sidebar:
     selected_operators = st.multiselect("Select Operators", options=df["Operator"].unique(), default=df["Operator"].unique())
     start_date = st.date_input("Start Date", value=df["Date"].min().date())
     end_date = st.date_input("End Date", value=df["Date"].max().date())
-    start_time = st.time_input("Start Time", value=time(6, 0))
-    end_time = st.time_input("End Time", value=time(22, 0))
+    start_time = st.time_input("Start Time", value=time(6, 0), step=3600)
+    end_time = st.time_input("End Time", value=time(22, 0), setp=3600)
 
 # --- Filter DataFrame ---
 filtered_df = df[
