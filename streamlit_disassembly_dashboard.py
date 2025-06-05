@@ -86,4 +86,4 @@ totals_by_shift = (
     .rename(columns={"Drawers Processed": "Total Drawers"})
 )
 
-st.dataframe(totals_by_shift, use_container_width=True)
+st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
