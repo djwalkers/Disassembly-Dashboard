@@ -135,8 +135,8 @@ efficiency = filtered_df.groupby("Operator").agg(
     Total_Drawers=("Drawers Processed", "sum"),
     Sessions=("Date", "count")
 ).reset_index()
-efficiency["Avg per Session"] = (efficiency["Total_Drawers"] / efficiency["Sessions"]).round(2)
-st.dataframe(efficiency.sort_values("Avg per Session", ascending=False), use_container_width=True, hide_index=True)
+efficiency["Avg Drawers per Session"] = (efficiency["Total_Drawers"] / efficiency["Sessions"]).round(2)
+st.dataframe(efficiency.sort_values("Avg Drawers per Session", ascending=False), use_container_width=True, hide_index=True)
 
 # --- ⏱️ Utilization Check ---
 st.subheader("🕒 Operator Utilization Summary")
