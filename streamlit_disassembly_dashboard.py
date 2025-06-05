@@ -76,7 +76,7 @@ filtered_df["KPI %"] = ((filtered_df["Drawers Processed"] / 1) / KPI_TARGET * 10
 st.subheader("📊 Drawers Processed per Shift by Operator")
 shift_summary = filtered_df.groupby(["Shift Day", "Shift", "Operator"]).agg(
     Total_Drawers=("Drawers Processed", "sum"),
-    Login_Count=("Date", "count"),
+    Login Count=("Date", "count"),
 ).reset_index()
 
 if not shift_summary.empty:
@@ -104,9 +104,9 @@ st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
 st.subheader("🏆 Top Operator Per Day (Avg Drawers/Login)")
 top_per_day = filtered_df.groupby(["Shift Day", "Operator"]).agg(
     Total_Drawers=("Drawers Processed", "sum"),
-    Login_Count=("Date", "count")
+    Login Count=("Date", "count")
 ).reset_index()
-top_per_day["Avg Drawers per Login"] = (top_per_day["Total_Drawers"] / top_per_day["Login_Count"]).round(2)
+top_per_day["Avg Drawers per Login"] = (top_per_day["Total_Drawers"] / top_per_day["Login Count"]).round(2)
 idx = top_per_day.groupby("Shift Day")["Avg Drawers per Login"].idxmax()
 top_users = top_per_day.loc[idx].reset_index(drop=True).rename(columns={"Shift Day": "Date", "Operator": "Top Operator"})
 st.dataframe(top_users[["Date", "Top Operator", "Avg Drawers per Login"]], use_container_width=True, hide_index=True)
@@ -125,15 +125,15 @@ st.plotly_chart(fig2, use_container_width=True)
 st.subheader("📋 Operator Efficiency Ranking")
 efficiency = filtered_df.groupby("Operator").agg(
     Total_Drawers=("Drawers Processed", "sum"),
-    Login_Count=("Date", "count")
+    Login Count=("Date", "count")
 ).reset_index()
-efficiency["Avg per Login"] = (efficiency["Total_Drawers"] / efficiency["Login_Count"]).round(2)
+efficiency["Avg per Login"] = (efficiency["Total_Drawers"] / efficiency["Login Count"]).round(2)
 st.dataframe(efficiency.sort_values("Avg per Login", ascending=False), use_container_width=True, hide_index=True)
 
 # --- ⏱️ Utilization Check ---
 st.subheader("🕒 Operator Utilization Summary")
-util = filtered_df.groupby(["Shift Day", "Operator"]).agg(Login_Count=("Date", "count")).reset_index()
-low_util = util[util["Login_Count"] <= 1]
+util = filtered_df.groupby(["Shift Day", "Operator"]).agg(Login Count=("Date", "count")).reset_index()
+low_util = util[util["Login Count"] <= 1]
 if not low_util.empty:
     st.warning("⚠️ Operators with low utilization (≤1 login per day):")
     st.dataframe(low_util, use_container_width=True, hide_index=True)
