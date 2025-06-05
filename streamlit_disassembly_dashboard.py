@@ -124,3 +124,14 @@ top_users = top_users.rename(columns={
 
 st.dataframe(top_users[["Date", "Top Operator", "Shift", "Avg Drawers per Session"]],
              use_container_width=True, hide_index=True)
+
+# --- 🐛 DEBUG SECTION: YI LAM WONG DETAIL ---
+debug_operator = "YI LAM WONG"
+debug_data = filtered_df[filtered_df["Operator"] == debug_operator].copy()
+debug_data["Shift Day"] = pd.to_datetime(debug_data["Shift Day"]).dt.strftime("%d/%m/%y")
+
+st.subheader(f"🐛 Debug: Sessions for {debug_operator}")
+st.write(f"**Total Rows (Sessions):** {len(debug_data)}")
+st.write(f"**Total Drawers Processed:** {debug_data['Drawers Processed'].sum()}")
+
+st.dataframe(debug_data[["Date", "Shift Day", "Shift", "Drawers Processed"]], use_container_width=True)
