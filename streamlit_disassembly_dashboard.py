@@ -93,10 +93,9 @@ totals_by_shift = (
 
 st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
 
-# --- 🏆 Top Operator Per Day ---
+# --- 🏆 Top Operator Per Day (Corrected) ---
 st.subheader("🏆 Top Operator Per Day (Average Drawers per Session)")
 
-# Make sure Shift Day is datetime for correct grouping
 filtered_df["Shift Day"] = pd.to_datetime(filtered_df["Shift Day"])
 
 top_per_day = (
@@ -110,28 +109,16 @@ top_per_day = (
 
 top_per_day["Avg Drawers per Session"] = (top_per_day["Total_Drawers"] / top_per_day["Sessions"]).round(1)
 
-# Find top operator per day
-top_users = top_per_day.sort_values(["Shift Day", "Avg Drawers per Session"], ascending=[True, False])
-top_users = top_users.groupby("Shift Day").head(1).reset_index(drop=True)
+# ✅ Correct selection of top operator per day
+idx = top_per_day.groupby("Shift Day")["Avg Drawers per Session"].idxmax()
+top_users = top_per_day.loc[idx].reset_index(drop=True)
 
 # Format for display
 top_users["Shift Day"] = top_users["Shift Day"].dt.strftime("%d/%m/%y")
 top_users = top_users.rename(columns={
     "Shift Day": "Date",
-    "Operator": "Top Operator",
-    "Avg Drawers per Session": "Avg Drawers per Session"
+    "Operator": "Top Operator"
 })
 
 st.dataframe(top_users[["Date", "Top Operator", "Shift", "Avg Drawers per Session"]],
              use_container_width=True, hide_index=True)
-
-# --- 🐛 DEBUG SECTION: YI LAM WONG DETAIL ---
-debug_operator = "YI LAM WONG"
-debug_data = filtered_df[filtered_df["Operator"] == debug_operator].copy()
-debug_data["Shift Day"] = pd.to_datetime(debug_data["Shift Day"]).dt.strftime("%d/%m/%y")
-
-st.subheader(f"🐛 Debug: Sessions for {debug_operator}")
-st.write(f"**Total Rows (Sessions):** {len(debug_data)}")
-st.write(f"**Total Drawers Processed:** {debug_data['Drawers Processed'].sum()}")
-
-st.dataframe(debug_data[["Date", "Shift Day", "Shift", "Drawers Processed"]], use_container_width=True)
