@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from datetime import datetime, time, timedelta
+import io
 
 st.set_page_config(page_title="Disassembly Dashboard", layout="wide")
 st.title("🛠️ Disassembly Shift Performance Dashboard")
@@ -34,7 +35,7 @@ filtered_df = df[
     (df["Date"].dt.time <= end_time)
 ].copy()
 
-# --- Assign Shift and Shift Day (AM / PM / Night) ---
+# --- Assign Shift and Shift Day ---
 def assign_shift_and_shift_day(dt):
     t = dt.time()
     if time(6, 0) <= t < time(14, 0):
@@ -51,10 +52,10 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
-# --- Optional: Reformat full Date column (for table exports, etc.)
-filtered_df["Date"] = filtered_df["Date"].dt.strftime("%d/%m/%y %H:%M")
+# Format for display
+filtered_df["Date"] = pd.to_datetime(filtered_df["Date"]).dt.strftime("%d/%m/%y %H:%M")
 
-# --- Format Shift Day column for chart table
+# --- Shift Summary Table ---
 shift_summary = (
     filtered_df.groupby(["Shift Day", "Shift", "Operator"])["Drawers Processed"]
     .sum()
@@ -64,7 +65,10 @@ shift_summary = (
 
 shift_summary["Shift Day"] = pd.to_datetime(shift_summary["Shift Day"]).dt.strftime("%d/%m/%y")
 
-# --- Plot Chart ---
+# --- KPI Target ---
+KPI_TARGET = 130 * 8  # Drawers expected per 8-hour shift
+
+# --- Chart ---
 st.subheader("📊 Drawers Processed per Shift by Operator")
 
 if not shift_summary.empty:
@@ -76,6 +80,14 @@ if not shift_summary.empty:
         barmode="group",
         title="Drawers Processed by Shift (AM / PM / Night)",
         text_auto=True,
+    )
+    # Add KPI target line
+    fig.add_hline(
+        y=KPI_TARGET,
+        line_dash="dash",
+        line_color="red",
+        annotation_text=f"KPI Target ({KPI_TARGET})",
+        annotation_position="outside top"
     )
     st.plotly_chart(fig, use_container_width=True)
 else:
@@ -91,4 +103,27 @@ totals_by_shift = (
     .rename(columns={"Drawers Processed": "Total Drawers"})
 )
 
-st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
+# Add KPI comparison
+totals_by_shift["KPI Target"] = KPI_TARGET
+totals_by_shift["% of KPI"] = (totals_by_shift["Total Drawers"] / KPI_TARGET * 100).round(1)
+
+# Conditional coloring
+def highlight_kpi(row):
+    color = "#90EE90" if row["Total Drawers"] >= KPI_TARGET else "#FFB6C1"
+    return [f'background-color: {color}'] * len(row)
+
+styled_table = totals_by_shift.style.apply(highlight_kpi, axis=1)
+
+st.dataframe(styled_table, use_container_width=True, hide_index=True)
+
+# --- CSV Export ---
+csv_export = shift_summary.copy()
+csv_export = csv_export.sort_values(["Shift Day", "Shift", "Operator"])
+csv_bytes = csv_export.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="📤 Download Shift Summary as CSV",
+    data=csv_bytes,
+    file_name="shift_summary.csv",
+    mime="text/csv"
+)
