@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from datetime import datetime, time, timedelta
-import io
 
 st.set_page_config(page_title="Disassembly Dashboard", layout="wide")
 st.title("🛠️ Disassembly Shift Performance Dashboard")
@@ -71,7 +70,7 @@ filtered_df["Shift Day"] = pd.to_datetime(filtered_df["Shift Day"]).dt.strftime(
 filtered_df.drop(columns=["TimeStr"], inplace=True)
 
 # --- KPI % Analysis ---
-filtered_df["KPI %"] = ((filtered_df["Drawers Processed"] / 1) / KPI_TARGET * 100).round(1)  # assuming 1 hour sessions
+filtered_df["KPI %"] = ((filtered_df["Drawers Processed"] / 1) / KPI_TARGET * 100).round(1)
 
 # --- Drawers by Shift & Operator ---
 st.subheader("📊 Drawers Processed per Shift by Operator")
@@ -116,10 +115,9 @@ st.subheader("📈 Drawers Processed Over Time")
 daily_totals = filtered_df.copy()
 daily_totals["Shift Day"] = pd.to_datetime(daily_totals["Shift Day"], dayfirst=True)
 daily_chart = daily_totals.groupby("Shift Day")["Drawers Processed"].sum().reset_index()
-daily_chart["Shift Day"] = pd.to_datetime(daily_chart["Shift Day"], dayfirst=True)
-daily_chart["Shift Day"] = daily_chart["Shift Day"].dt.strftime("%d/%m/%y")
-fig2 = px.line(daily_chart, x="Shift Day", y="Drawers Processed", markers=True, title="Daily Total Drawers")
-fig2.update_layout(xaxis_tickformat="%d/%m/%y")
+daily_chart["Shift Day Display"] = daily_chart["Shift Day"].dt.strftime("%d/%m/%y")
+fig2 = px.line(daily_chart, x="Shift Day Display", y="Drawers Processed", markers=True, title="Daily Total Drawers")
+fig2.update_layout(xaxis_title="Date (dd/mm/yy)")
 st.plotly_chart(fig2, use_container_width=True)
 
 # --- 🧮 Operator Efficiency Ranking ---
