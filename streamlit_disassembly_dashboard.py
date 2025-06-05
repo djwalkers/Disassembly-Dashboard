@@ -51,6 +51,7 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
+# Format original datetime for display
 filtered_df["Date"] = pd.to_datetime(filtered_df["Date"]).dt.strftime("%d/%m/%y %H:%M")
 
 # --- Shift Summary Table ---
@@ -92,8 +93,11 @@ totals_by_shift = (
 
 st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
 
-# --- Top User Per Day by Avg Drawers per Session ---
+# --- 🏆 Top Operator Per Day ---
 st.subheader("🏆 Top Operator Per Day (Average Drawers per Session)")
+
+# Make sure Shift Day is datetime for correct grouping
+filtered_df["Shift Day"] = pd.to_datetime(filtered_df["Shift Day"])
 
 top_per_day = (
     filtered_df.groupby(["Shift Day", "Shift", "Operator"])
@@ -105,14 +109,18 @@ top_per_day = (
 )
 
 top_per_day["Avg Drawers per Session"] = (top_per_day["Total_Drawers"] / top_per_day["Sessions"]).round(1)
-top_per_day["Shift Day"] = pd.to_datetime(top_per_day["Shift Day"]).dt.strftime("%d/%m/%y")
 
-# Pick top per day (highest average), preserving shift info
+# Find top operator per day
 top_users = top_per_day.sort_values(["Shift Day", "Avg Drawers per Session"], ascending=[True, False])
 top_users = top_users.groupby("Shift Day").head(1).reset_index(drop=True)
 
-# Format clean table
-top_users = top_users[["Shift Day", "Operator", "Shift", "Avg Drawers per Session"]]
-top_users.columns = ["Date", "Top Operator", "Shift", "Avg Drawers per Session"]
+# Format for display
+top_users["Shift Day"] = top_users["Shift Day"].dt.strftime("%d/%m/%y")
+top_users = top_users.rename(columns={
+    "Shift Day": "Date",
+    "Operator": "Top Operator",
+    "Avg Drawers per Session": "Avg Drawers per Session"
+})
 
-st.dataframe(top_users, use_container_width=True, hide_index=True)
+st.dataframe(top_users[["Date", "Top Operator", "Shift", "Avg Drawers per Session"]],
+             use_container_width=True, hide_index=True)
