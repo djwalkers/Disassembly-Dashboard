@@ -31,7 +31,7 @@ with st.sidebar:
     end_time = st.time_input("End Time", value=time(22, 0), step=3600)
 
 # --- Filter DataFrame ---
-df["Date"] = pd.to_datetime(df["Date"])
+df["Date"] = pd.to_datetime(df["Date"], dayfirst=True)
 
 def assign_shift_and_shift_day(dt):
     t = dt.time()
@@ -103,10 +103,12 @@ st.dataframe(top_users[["Date", "Top Operator", "Avg Drawers per Session"]], use
 # --- 📈 Time Series Trends ---
 st.subheader("📈 Drawers Processed Over Time")
 daily_totals = filtered_df.copy()
-daily_totals["Shift Day"] = pd.to_datetime(daily_totals["Shift Day"])
+daily_totals["Shift Day"] = pd.to_datetime(daily_totals["Shift Day"], dayfirst=True)
 daily_chart = daily_totals.groupby("Shift Day")["Drawers Processed"].sum().reset_index()
-daily_chart["Shift Day"] = pd.to_datetime(daily_chart["Shift Day"])
+daily_chart["Shift Day"] = pd.to_datetime(daily_chart["Shift Day"], dayfirst=True)
+daily_chart["Shift Day"] = daily_chart["Shift Day"].dt.strftime("%d/%m/%y")
 fig2 = px.line(daily_chart, x="Shift Day", y="Drawers Processed", markers=True, title="Daily Total Drawers")
+fig2.update_layout(xaxis_tickformat="%d/%m/%y")
 st.plotly_chart(fig2, use_container_width=True)
 
 # --- 🧮 Operator Efficiency Ranking ---
