@@ -26,9 +26,9 @@ with st.sidebar:
     selected_shifts = st.multiselect("Select Shifts", options=shift_options, default=shift_options)
 
     # 📌 Enforce UK-style labeling
-    st.markdown("**Date Format: dd/mm/yyyy**")
-    start_date = st.date_input("Start Date (dd/mm/yyyy)", value=df["Date"].min().date())
-    end_date = st.date_input("End Date (dd/mm/yyyy)", value=df["Date"].max().date())
+    st.markdown("**Date Format: yyyy/mm/dd**")
+    start_date = st.date_input("Start Date (yyyy/mm/dd)", value=df["Date"].min().date())
+    end_date = st.date_input("End Date (yyyy/mm/dd)", value=df["Date"].max().date())
 
     start_time = st.time_input("Start Time", value=time(6, 0), step=3600)
     end_time = st.time_input("End Time", value=time(22, 0), step=3600)
