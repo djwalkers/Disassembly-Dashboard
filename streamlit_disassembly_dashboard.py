@@ -34,7 +34,7 @@ filtered_df = df[
     (df["Date"].dt.time <= end_time)
 ].copy()
 
-# --- Assign Shift and Shift Day (AM / PM / Night) ---
+# --- Assign Shift and Shift Day ---
 def assign_shift_and_shift_day(dt):
     t = dt.time()
     if time(6, 0) <= t < time(14, 0):
@@ -51,10 +51,9 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
-# --- Optional: Reformat full Date column (for table exports, etc.)
-filtered_df["Date"] = filtered_df["Date"].dt.strftime("%d/%m/%y %H:%M")
+filtered_df["Date"] = pd.to_datetime(filtered_df["Date"]).dt.strftime("%d/%m/%y %H:%M")
 
-# --- Format Shift Day column for chart table
+# --- Shift Summary Table ---
 shift_summary = (
     filtered_df.groupby(["Shift Day", "Shift", "Operator"])["Drawers Processed"]
     .sum()
@@ -64,7 +63,7 @@ shift_summary = (
 
 shift_summary["Shift Day"] = pd.to_datetime(shift_summary["Shift Day"]).dt.strftime("%d/%m/%y")
 
-# --- Plot Chart ---
+# --- Chart: Drawers per Operator by Shift ---
 st.subheader("📊 Drawers Processed per Shift by Operator")
 
 if not shift_summary.empty:
@@ -92,3 +91,28 @@ totals_by_shift = (
 )
 
 st.dataframe(totals_by_shift, use_container_width=True, hide_index=True)
+
+# --- Top User Per Day by Avg Drawers per Session ---
+st.subheader("🏆 Top Operator Per Day (Average Drawers per Session)")
+
+top_per_day = (
+    filtered_df.groupby(["Shift Day", "Shift", "Operator"])
+    .agg(
+        Total_Drawers=("Drawers Processed", "sum"),
+        Sessions=("Date", "count")
+    )
+    .reset_index()
+)
+
+top_per_day["Avg Drawers per Session"] = (top_per_day["Total_Drawers"] / top_per_day["Sessions"]).round(1)
+top_per_day["Shift Day"] = pd.to_datetime(top_per_day["Shift Day"]).dt.strftime("%d/%m/%y")
+
+# Pick top per day (highest average), preserving shift info
+top_users = top_per_day.sort_values(["Shift Day", "Avg Drawers per Session"], ascending=[True, False])
+top_users = top_users.groupby("Shift Day").head(1).reset_index(drop=True)
+
+# Format clean table
+top_users = top_users[["Shift Day", "Operator", "Shift", "Avg Drawers per Session"]]
+top_users.columns = ["Date", "Top Operator", "Shift", "Avg Drawers per Session"]
+
+st.dataframe(top_users, use_container_width=True, hide_index=True)
