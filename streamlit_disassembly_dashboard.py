@@ -51,13 +51,18 @@ filtered_df[["Shift", "Shift Day"]] = filtered_df["Date"].apply(
     lambda x: pd.Series(assign_shift_and_shift_day(x))
 )
 
-# --- Shift Summary for Chart ---
+# --- Optional: Reformat full Date column (for table exports, etc.)
+filtered_df["Date"] = filtered_df["Date"].dt.strftime("%d/%m/%y %H:%M")
+
+# --- Format Shift Day column for chart table
 shift_summary = (
     filtered_df.groupby(["Shift Day", "Shift", "Operator"])["Drawers Processed"]
     .sum()
     .reset_index()
     .rename(columns={"Drawers Processed": "Total Drawers"})
 )
+
+shift_summary["Shift Day"] = pd.to_datetime(shift_summary["Shift Day"]).dt.strftime("%d/%m/%y")
 
 # --- Plot Chart ---
 st.subheader("📊 Drawers Processed per Shift by Operator")
